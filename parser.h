@@ -54,8 +54,8 @@ private:
     void parse_stmt();
     void parse_assign_stmt();
     void parse_output_stmt();
-    void parse_variable_access();
-    void parse_expr();
+    TreeNode * parse_variable_access();
+    TreeNode * parse_expr();
     void parse_primary();
     Token expect(TokenType expected_type);
     void syntax_error();

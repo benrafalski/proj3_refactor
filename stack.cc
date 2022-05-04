@@ -1,5 +1,7 @@
 #include "stack.h"
 
+
+
 StackNode Stack::pop()
 {
     StackNode top = stack.back();

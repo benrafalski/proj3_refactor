@@ -16,6 +16,14 @@ typedef struct StackNode
     snodeType type;
     TreeNode *expr;
     Token term;
+
+    StackNode(){}
+
+    StackNode(snodeType t, TreeNode *e, Token ter){
+        type = t;
+        expr = e;
+        term = ter;
+    }
 } StackNode;
 
 class Stack

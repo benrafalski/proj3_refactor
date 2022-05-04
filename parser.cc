@@ -11,6 +11,7 @@ Token Parser::expect(TokenType expected_type)
 
 void Parser::syntax_error()
 {
+    ++*(int *)0;
     cout << "SNYATX EORRR !!!\n";
     exit(1);
 }
@@ -37,7 +38,6 @@ void Parser::init_stack()
 // not done
 void Parser::parse_program()
 {
-    cout << "hi";
     init_stack();
     parse_decl_section();
     parse_block();
@@ -117,6 +117,7 @@ void Parser::parse_stmt_list()
 // not done
 void Parser::parse_stmt()
 {
+    cout << "stmt\n";
     if (peek() == ID)
         parse_assign_stmt();
     else if (peek() == OUTPUT)
@@ -141,89 +142,46 @@ void Parser::parse_output_stmt()
     expect(SEMICOLON);
 }
 
-void Parser::parse_variable_access()
+TreeNode *Parser::parse_variable_access()
 {
-    while (1)
-    {
-        
-        if (stack.terminal_peek().term.lexeme == "$" && next_symbol() == "$")
-        {
-            StackNode s = stack.pop();
-            return;
-        }
-        else
-        {
-            Token t = lexer.peek(1);
-            int b = getIndex(t.token_type), a = getIndex(stack.terminal_peek().term.token_type);
-            if (table[a][b] == "<" || table[a][b] == "=")
-            {
-
-                t = lexer.GetToken();
-
-                StackNode s_node;
-                s_node.type = TERM;
-                s_node.expr = NULL;
-                s_node.term = t;
-
-                stack.push(s_node);
-            }
-            else if (table[a][b] == ">")
-            {
-                vector<string> RHS = {};
-                vector<StackNode> reduce_me = {};
-                StackNode lpt = {};
-                while (1)
-                {
-                    StackNode s = stack.pop();
-                    if (s.type == TERM)
-                    {
-                        lpt = s;
-                    }
-                    reduce_me.push_back(s);
-                    RHS.push_back(getRHSLexeme(s));
-                    if (stack.top().type == TERM && table[getIndex(stack.terminal_peek().term.token_type)][getIndex(lpt.term.token_type)] == "<")
-                    {
-                        break;
-                    }
-                }
-                reverse(RHS.begin(), RHS.end());
-                reverse(reduce_me.begin(), reduce_me.end());
-
-                if (var_exists(RHS))
-                {
-                    StackNode E = reduce(reduce_me, RHS);
-                    stack.push(E);
-                }
-                else
-                {
-                    syntax_error();
-                }
-            }
-            else
-            {
-                syntax_error();
-            }
-        }
-    }
+    parse_expr();
+    // StackNode E = reduce({StackNode(TERM, NULL, expect(ID))}, {"primary"});
+    // if (peek() == LBRAC)
+    // {
+    //     stack.push(E);
+    //     return parse_expr();
+    // }
+    // else if (peek() == EQUAL)
+    // {
+    //     return E.expr;
+    // }
+    // else
+    // {
+    //     syntax_error();
+    // }
+    // return NULL;
 }
 
-void Parser::parse_expr()
+TreeNode *Parser::parse_expr()
 {
     while (1)
     {
         if (stack.terminal_peek().term.lexeme == "$" && next_symbol() == "$")
         {
             StackNode s = stack.pop();
-            return;
+            return s.expr;
         }
         else
         {
             Token t = lexer.peek(1);
+            cout << t.lexeme << " lexeme \n";
             int b = getIndex(t.token_type), a = getIndex(stack.terminal_peek().term.token_type);
+            cout << a << " " << b << endl;
             if (table[a][b] == "<" || table[a][b] == "=")
             {
 
                 t = lexer.GetToken();
+                // cout << t.lexeme << " lexeme \n";
 
                 StackNode s_node;
                 s_node.type = TERM;
@@ -237,22 +195,32 @@ void Parser::parse_expr()
                 vector<string> RHS = {};
                 vector<StackNode> reduce_me = {};
                 StackNode lpt = {};
+                bool lpt_set = false;
                 while (1)
                 {
                     StackNode s = stack.pop();
+                    cout << s.type;
                     if (s.type == TERM)
                     {
+                        cout << "lpt is being set\n";
+                        lpt_set = true;
                         lpt = s;
                     }
                     reduce_me.push_back(s);
                     RHS.push_back(getRHSLexeme(s));
-                    if (stack.top().type == TERM && table[getIndex(stack.terminal_peek().term.token_type)][getIndex(lpt.term.token_type)] == "<")
+                    if (lpt_set && stack.top().type == TERM && table[getIndex(stack.terminal_peek().term.token_type)][getIndex(lpt.term.token_type)] == "<")
                     {
+                        cout << "\n\n";
+                        lpt.term.Print();
+                        cout << (getIndex(lpt.term.token_type)) << "condition\n";
+                        cout << getIndex(stack.terminal_peek().term.token_type) << "cond2\n";
                         break;
                     }
                 }
+                cout << "\n\n";
                 reverse(RHS.begin(), RHS.end());
                 reverse(reduce_me.begin(), reduce_me.end());
+
 
                 if (rule_exists(RHS))
                 {
@@ -261,11 +229,13 @@ void Parser::parse_expr()
                 }
                 else
                 {
+                    cout << "esyn1\n";
                     syntax_error();
                 }
             }
             else
             {
+                cout << "esyn2\n";
                 syntax_error();
             }
         }
@@ -276,8 +246,13 @@ bool Parser::var_exists(vector<string> rhs)
 {
     vector<vector<string>> rules = {
         {"expr", "LBRAC", "expr", "RBRAC"},
-        {"expr"},
+        {"primary"},
         {"expr", "LBRAC", "DOT", "RBRAC"}};
+
+    for (auto r : rhs)
+    {
+        cout << r << endl;
+    }
     for (const auto &rule : rules)
     {
         if (rule == rhs)
@@ -290,6 +265,12 @@ bool Parser::var_exists(vector<string> rhs)
 
 bool Parser::rule_exists(vector<string> rhs)
 {
+    cout << "---------------------\n";
+    for (auto r : rhs)
+    {
+        cout << r << endl;
+    }
+    cout << "---------------------\n";
     for (auto expr : expr_rules)
     {
         if (expr.second == rhs)
