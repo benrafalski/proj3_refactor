@@ -19,6 +19,9 @@ private:
     vector<string> arrays;
     vector<Tree> trees;
 
+    vector<int> type_errors;
+    vector<int> assign_errors;
+
     map<string, vector<string>> expr_rules = {
         {"1", {"expr", "MINUS", "expr"}},
         {"2", {"expr", "PLUS", "expr"}},
@@ -44,6 +47,10 @@ private:
         {">", ">", ">", ">", "e", ">", ">", "e", ">", "e", "e", ">"}, // 10
         {"<", "<", "<", "<", "<", "e", "<", "e", "e", "<", "<", "a"}  // 11
     };
+
+    int type_check_expr(TreeNode * node);
+    int type_check_assignment(TreeNode *node);
+    int type_check_var_access(TreeNode *node);
 
     void parse_decl_section();
     vector<string> parse_scalar_decl_section();

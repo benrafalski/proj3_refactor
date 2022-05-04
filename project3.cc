@@ -24,6 +24,7 @@ void Task1()
 void Task2()
 {
     // parser.Task2();
+    parser.parse_program();
 }
 
 // Task 3
