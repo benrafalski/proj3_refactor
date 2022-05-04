@@ -17,9 +17,10 @@ typedef struct StackNode
     TreeNode *expr;
     Token term;
 
-    StackNode(){}
+    StackNode() {}
 
-    StackNode(snodeType t, TreeNode *e, Token ter){
+    StackNode(snodeType t, TreeNode *e, Token ter)
+    {
         type = t;
         expr = e;
         term = ter;
@@ -35,7 +36,17 @@ public:
     StackNode top();
     StackNode terminal_peek();
     StackNode pop();
-    void push(StackNode&);
+    void push(StackNode &);
+
+    void init_stack()
+    {
+        StackNode node;
+        // next_index = 0;
+        node.type = TERM;
+        node.term.lexeme = "$";
+        node.term.line_no = -1;
+        node.term.token_type = END_OF_FILE;
+        push(node);
+    };
     // StackNode reduce(vector<StackNode> stk, vector<string> rhs);
 };
-

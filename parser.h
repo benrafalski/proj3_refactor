@@ -54,14 +54,14 @@ private:
     void parse_stmt();
     void parse_assign_stmt();
     void parse_output_stmt();
-    TreeNode * parse_variable_access();
-    TreeNode * parse_expr();
+    TreeNode *parse_variable_access();
+    TreeNode *parse_expr();
     void parse_primary();
     Token expect(TokenType expected_type);
     void syntax_error();
-    TokenType peek();
+    TokenType peek(const int);
 
-    void init_stack();
+    // void init_stack();
     int getIndex(TokenType key);
     bool rule_exists(vector<string> rhs);
     bool var_exists(vector<string> rhs);

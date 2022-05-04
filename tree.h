@@ -2,7 +2,6 @@
 #include <iostream>
 #include "execute.h"
 
-
 using namespace std;
 
 typedef enum tnodeType
@@ -36,13 +35,32 @@ typedef struct TreeNode
     bool wrapped;
     bool is_num;
 
-    instNode * inst;
+    instNode *inst;
+
+    TreeNode(){};
+    TreeNode(TreeNode *r, TreeNode *l, string val)
+    {
+        right = r;
+        left = l;
+        value = val;
+    };
+    TreeNode(TreeNode *r, TreeNode *l, tnodeType t, Optr o, string v, string raw)
+    {
+        right = r;
+        left = l;
+        type = t;
+        op = o;
+        value = v;
+        rawValue = raw;
+        wrapped = false;
+        is_num = false;
+    };
 
 } TreeNode;
 
 class Tree
 {
-    public:
+public:
     TreeNode *root;
     int line_no;
 
@@ -50,4 +68,10 @@ class Tree
     int height(TreeNode *node);
     void printCurrentLevel(TreeNode *root, int level);
     void printLevelOrder();
+    Tree(){};
+    Tree(TreeNode *r, int ln)
+    {
+        root = r;
+        line_no = ln;
+    };
 };
