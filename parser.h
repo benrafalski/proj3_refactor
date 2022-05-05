@@ -5,7 +5,7 @@
 #include <algorithm>
 #include "execute.h"
 #include "lexer.h"
-#include "stack.h"
+#include "typechecker.h"
 
 using namespace std;
 
@@ -19,8 +19,10 @@ private:
     vector<string> arrays;
     vector<Tree> trees;
 
-    vector<int> type_errors;
-    vector<int> assign_errors;
+    // vector<int> type_errors;
+    // vector<int> assign_errors;
+
+    TypeChecker checker;
 
     map<string, vector<string>> expr_rules = {
         {"1", {"expr", "MINUS", "expr"}},
@@ -48,9 +50,9 @@ private:
         {"<", "<", "<", "<", "<", "e", "<", "e", "e", "<", "<", "a"}  // 11
     };
 
-    int type_check_expr(TreeNode * node);
-    int type_check_assignment(TreeNode *node);
-    int type_check_var_access(TreeNode *node);
+    // int type_check_expr(TreeNode *node);
+    // int type_check_assignment(TreeNode *node);
+    // int type_check_var_access(TreeNode *node);
 
     void parse_decl_section();
     vector<string> parse_scalar_decl_section();
@@ -68,7 +70,6 @@ private:
     void syntax_error();
     TokenType peek(const int);
 
-    // void init_stack();
     int getIndex(TokenType key);
     bool rule_exists(vector<string> rhs);
     bool var_exists(vector<string> rhs);
@@ -77,5 +78,5 @@ private:
     StackNode reduce(vector<StackNode> stk, vector<string> rhs);
 
 public:
-    void parse_program();
+    void parse_program(const int);
 };

@@ -17,14 +17,14 @@ Parser parser;
 void Task1()
 {
     // parser.Task1();
-    parser.parse_program();
+    parser.parse_program(1);
 }
 
 // Task 1
 void Task2()
 {
     // parser.Task2();
-    parser.parse_program();
+    parser.parse_program(2);
 }
 
 // Task 3
