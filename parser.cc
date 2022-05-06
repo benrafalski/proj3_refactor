@@ -1,5 +1,33 @@
 #include "parser.h"
 
+int Parser::loc(const string lex)
+{
+    for (const auto &l : location_table)
+    {
+        if (l.lexeme == lex)
+        {
+            return l.mem_addr;
+        }
+    }
+    return -1;
+}
+
+void Append(instNode *head, instNode *newNode)
+{
+    if (head == NULL)
+    {
+        head = newNode;
+        return;
+    }
+    instNode *node = head;
+    while (node->next)
+    {
+        node = node->next;
+    }
+
+    node->next = newNode;
+}
+
 Token Parser::expect(TokenType expected_type)
 {
     Token t = lexer.GetToken();
@@ -45,8 +73,17 @@ void Parser::parse_program(const int task)
 void Parser::parse_block()
 {
     expect(LBRACE);
-    parse_stmt_list();
+    instNode *i = parse_stmt_list();
     expect(RBRACE);
+
+    while (i->next)
+    {
+        cout << i->lhs << endl;
+        cout << i->op1 << endl;
+        cout << "\n\n";
+
+        i = i->next;
+    }
 }
 
 // done
@@ -57,11 +94,13 @@ void Parser::parse_decl_section()
     reverse(scalars.begin(), scalars.end());
     reverse(arrays.begin(), arrays.end());
     checker.set_declarations(arrays, scalars);
-    for(const auto s : scalars){
+    for (const auto s : scalars)
+    {
         location_table.push_back(location(next_index, s, SCLR));
         next_index++;
     }
-    for(const auto a : arrays){
+    for (const auto a : arrays)
+    {
         location_table.push_back(location(next_index, a, ARR));
         next_index += 10;
     }
@@ -103,51 +142,74 @@ vector<string> Parser::parse_array_decl_section()
 }
 
 // not done
-void Parser::parse_stmt_list()
+instNode *Parser::parse_stmt_list()
 {
-    parse_stmt();
+    instNode *i = parse_stmt();
     if (peek(1) == ID || peek(1) == OUTPUT)
-        parse_stmt_list();
+    {
+        Append(i, parse_stmt_list());
+        return i;
+    }
     else if (peek(1) == RBRACE)
-        return;
+        return i;
     else
         syntax_error();
+
+    return i;
 }
 
 // not done
-void Parser::parse_stmt()
+instNode *Parser::parse_stmt()
 {
+    instNode *i;
     // cout << "stmt\n";
     if (peek(1) == ID)
-        parse_assign_stmt();
+        i = parse_assign_stmt();
     else if (peek(1) == OUTPUT)
-        parse_output_stmt();
+        i = parse_output_stmt();
     else
         syntax_error();
+
+    return i;
 }
 
 // not done
-void Parser::parse_assign_stmt()
+instNode *Parser::parse_assign_stmt()
 {
     TreeNode *lhs = parse_variable_access();
     int ln = expect(EQUAL).line_no;
     TreeNode *rhs = parse_expr();
     trees.push_back(Tree(new TreeNode(rhs, lhs, "="), expect(SEMICOLON).line_no));
     checker.type_check_assignment_stmt(rhs, lhs, ln);
+
+    instNode *i = new instNode();
+    i->lhsat = lhs->inst->lhsat;
+    i->lhs = lhs->inst->lhs;
+    i->iType = ASSIGN_INST;
+    i->op1at = rhs->inst->lhsat;
+    i->op1 = rhs->inst->lhs;
+
+    return i;
 }
 
-void Parser::parse_output_stmt()
+instNode *Parser::parse_output_stmt()
 {
     int ln = expect(OUTPUT).line_no;
     TreeNode *va = parse_variable_access();
     checker.type_check_output_stmt(va, ln);
     expect(SEMICOLON);
+
+    instNode *i = new instNode();
+    i->iType = OUTPUT_INST;
+    i->op1at = va->inst->lhsat;
+    i->op1 = va->inst->lhs;
+
+    return i;
 }
 
 TreeNode *Parser::parse_variable_access()
 {
     StackNode E = reduce({StackNode(TERM, NULL, expect(ID))}, {"primary"});
-    // lexer.peek(1).Print();
     if (peek(1) == LBRAC)
     {
         stack.push(E);
@@ -162,11 +224,14 @@ TreeNode *Parser::parse_variable_access()
 
 TreeNode *Parser::parse_expr()
 {
+
+    instNode *i = NULL;
     while (1)
     {
         if (stack.terminal_peek().term.lexeme == "$" && next_symbol() == "$")
         {
             StackNode s = stack.pop();
+            s.expr->inst = i;
             return s.expr;
         }
         else
@@ -211,6 +276,18 @@ TreeNode *Parser::parse_expr()
                 {
                     StackNode E = reduce(reduce_me, RHS);
                     stack.push(E);
+
+                    if (i == NULL)
+                    {
+                        i = E.expr->inst;
+                    }
+                    else
+                    {
+                        if ((E.expr->inst->oper == OP_PLUS || E.expr->inst->oper == OP_MULT || E.expr->inst->oper == OP_DIV || E.expr->inst->oper == OP_MINUS) && E.expr->wrapped == false)
+                        {
+                            Append(i, E.expr->inst);
+                        }
+                    }
                 }
                 else
                     syntax_error();
@@ -323,41 +400,108 @@ StackNode Parser::reduce(vector<StackNode> stk, vector<string> rhs)
     StackNode node;
     node.type = EXPR;
     TreeNode *tnode;
+    instNode *inst = new instNode();
     if (rhs == vector<string>({"expr", "MINUS", "expr"}))
     {
         tnode = new TreeNode(stk[2].expr, stk[0].expr, _ARRAY, _MINUS, "-", "-");
+
+        inst->lhsat = DIRECT;
+        inst->lhs = next_index++;
+        inst->iType = ASSIGN_INST;
+        inst->op1at = stk[0].expr->inst->lhsat;
+        inst->op1 = stk[0].expr->inst->lhs;
+        inst->oper = OP_MINUS;
+        inst->op2at = stk[2].expr->inst->lhsat;
+        inst->op2 = stk[2].expr->inst->lhs;
     }
     else if (rhs == vector<string>({"expr", "PLUS", "expr"}))
     {
         tnode = new TreeNode(stk[2].expr, stk[0].expr, _ARRAY, _PLUS, "+", "+");
+
+        inst->lhsat = DIRECT;
+        inst->lhs = next_index++;
+        inst->iType = ASSIGN_INST;
+        inst->op1at = stk[0].expr->inst->lhsat;
+        inst->op1 = stk[0].expr->inst->lhs;
+        inst->oper = OP_PLUS;
+        inst->op2at = stk[2].expr->inst->lhsat;
+        inst->op2 = stk[2].expr->inst->lhs;
     }
     else if (rhs == vector<string>({"expr", "MULT", "expr"}))
     {
         tnode = new TreeNode(stk[2].expr, stk[0].expr, _ARRAY, _MULT, "*", "*");
+
+        inst->lhsat = DIRECT;
+        inst->lhs = next_index++;
+        inst->iType = ASSIGN_INST;
+        inst->op1at = stk[0].expr->inst->lhsat;
+        inst->op1 = stk[0].expr->inst->lhs;
+        inst->oper = OP_MULT;
+        inst->op2at = stk[2].expr->inst->lhsat;
+        inst->op2 = stk[2].expr->inst->lhs;
     }
     else if (rhs == vector<string>({"expr", "DIV", "expr"}))
     {
         tnode = new TreeNode(stk[2].expr, stk[0].expr, _ARRAY, _DIV, "/", "/");
+
+        inst->lhsat = DIRECT;
+        inst->lhs = next_index++;
+        inst->iType = ASSIGN_INST;
+        inst->op1at = stk[0].expr->inst->lhsat;
+        inst->op1 = stk[0].expr->inst->lhs;
+        inst->oper = OP_DIV;
+        inst->op2at = stk[2].expr->inst->lhsat;
+        inst->op2 = stk[2].expr->inst->lhs;
     }
     else if (rhs == vector<string>({"LPAREN", "expr", "RPAREN"}))
     {
         tnode = stk[1].expr;
         tnode->wrapped = true;
+
+        inst = stk[1].expr->inst;
     }
     else if (rhs == vector<string>({"expr", "LBRAC", "expr", "RBRAC"}))
     {
         tnode = new TreeNode(stk[2].expr, stk[0].expr, _ARRAY, _EXPR, "[]", "[]");
+
+        inst->lhsat = DIRECT;
+        inst->lhs = next_index++;
+        inst->iType = ASSIGN_INST;
+        inst->op1at = IMMEDIATE;
+        inst->op1 = stk[0].expr->inst->lhs; // bug here
+        inst->oper = OP_PLUS;
+        inst->op2at = stk[2].expr->inst->lhsat;
+        inst->op2 = stk[2].expr->inst->lhs;
     }
     else if (rhs == vector<string>({"expr", "LBRAC", "DOT", "RBRAC"}))
     {
         tnode = new TreeNode(NULL, stk[0].expr, _ARRAY, _DOT, "[.]", "[.]");
+
+        inst->lhsat = DIRECT;
+        inst->lhs = next_index++;
+        inst->iType = ASSIGN_INST;
+        inst->op1at = IMMEDIATE;
+        inst->op1 = stk[0].expr->inst->lhs; // bug here
+        inst->oper = OP_PLUS;
+        inst->op2at = stk[2].expr->inst->lhsat;
+        inst->op2 = stk[2].expr->inst->lhs;
     }
     else
     { // primary
         tnode = new TreeNode(NULL, NULL, _ARRAY, _NOOP, ((stk[0].term.token_type == NUM) ? ("NUM \"" + stk[0].term.lexeme + "\"") : ("ID \"" + stk[0].term.lexeme + "\"")), stk[0].term.lexeme);
         if (stk[0].term.token_type == NUM)
+        {
             tnode->is_num = true;
+            inst->lhsat = IMMEDIATE;
+            inst->lhs = stoi(stk[0].term.lexeme);
+        }
+        else
+        {
+            inst->lhsat = DIRECT;
+            inst->lhs = loc(stk[0].term.lexeme);
+        }
     }
+    tnode->inst = inst;
     node.expr = tnode;
     return node;
 }

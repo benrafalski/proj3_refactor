@@ -70,15 +70,17 @@ private:
     int next_index = 0;
     vector<location> location_table;
 
+    int loc(const string);
+
     void parse_decl_section();
     vector<string> parse_scalar_decl_section();
     vector<string> parse_array_decl_section();
     vector<string> parse_id_list();
     void parse_block();
-    void parse_stmt_list();
-    void parse_stmt();
-    void parse_assign_stmt();
-    void parse_output_stmt();
+    instNode * parse_stmt_list();
+    instNode * parse_stmt();
+    instNode * parse_assign_stmt();
+    instNode * parse_output_stmt();
     TreeNode *parse_variable_access();
     TreeNode *parse_expr();
     void parse_primary();
