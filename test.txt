@@ -1,7 +1,11 @@
-SCALAR x y z
-ARRAY a b c
+SCALAR a b c d	 
+ARRAY x y z
 {
-a[x+y] = 1+x*a[z]-a[a[z]];
-y = 1;
-a[x] = c[y];
+a = 1;
+b = 2;
+c = 3;
+d = (a+b)*(b+c);
+OUTPUT d;
+x[a+b] = d;
+OUTPUT x[3];
 }

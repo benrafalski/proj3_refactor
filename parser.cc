@@ -57,14 +57,16 @@ void Parser::parse_decl_section()
     reverse(scalars.begin(), scalars.end());
     reverse(arrays.begin(), arrays.end());
     checker.set_declarations(arrays, scalars);
-    // for(auto it = scalars.begin(); it != scalars.end(); it++){
-    //     location_table.push_back(location(next_index, *it, SCLR));
-    //     next_index++;
-    // }
-    // for(auto it = arrays.begin(); it != arrays.end(); it++){
-    //     location_table.push_back(location(next_index, *it, ARR));
-    //     next_index += 10;
-    // }
+    for(const auto s : scalars){
+        location_table.push_back(location(next_index, s, SCLR));
+        next_index++;
+    }
+    for(const auto a : arrays){
+        location_table.push_back(location(next_index, a, ARR));
+        next_index += 10;
+    }
+
+    // cout << next_index << endl;
 }
 
 // done
@@ -145,12 +147,13 @@ void Parser::parse_output_stmt()
 TreeNode *Parser::parse_variable_access()
 {
     StackNode E = reduce({StackNode(TERM, NULL, expect(ID))}, {"primary"});
+    // lexer.peek(1).Print();
     if (peek(1) == LBRAC)
     {
         stack.push(E);
         return parse_expr();
     }
-    else if (peek(1) == EQUAL)
+    else if (peek(1) == EQUAL || peek(1) == SEMICOLON)
         return E.expr;
     else
         syntax_error();

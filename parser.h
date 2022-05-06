@@ -9,18 +9,35 @@
 
 using namespace std;
 
+typedef enum lType
+{
+    SCLR = 0,
+    ARR = 1
+} lType;
+
+typedef struct location
+{
+    int mem_addr;
+    string lexeme;
+    lType type;
+
+    location(int m, string l, lType t)
+    {
+        mem_addr = m;
+        lexeme = l;
+        type = t;
+    };
+} location;
+
 class Parser
 {
 private:
-    // ++*(int*)0;
     LexicalAnalyzer lexer;
     Stack stack;
+
     vector<string> scalars;
     vector<string> arrays;
     vector<Tree> trees;
-
-    // vector<int> type_errors;
-    // vector<int> assign_errors;
 
     TypeChecker checker;
 
@@ -50,9 +67,8 @@ private:
         {"<", "<", "<", "<", "<", "e", "<", "e", "e", "<", "<", "a"}  // 11
     };
 
-    // int type_check_expr(TreeNode *node);
-    // int type_check_assignment(TreeNode *node);
-    // int type_check_var_access(TreeNode *node);
+    int next_index = 0;
+    vector<location> location_table;
 
     void parse_decl_section();
     vector<string> parse_scalar_decl_section();
