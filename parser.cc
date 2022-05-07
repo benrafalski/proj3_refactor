@@ -161,6 +161,7 @@ instNode *Parser::parse_stmt_list()
 // not done
 instNode *Parser::parse_stmt()
 {
+    cout << "smtt\n";
     instNode *i;
     // cout << "stmt\n";
     if (peek(1) == ID)
@@ -189,7 +190,9 @@ instNode *Parser::parse_assign_stmt()
     i->op1at = rhs->inst->lhsat;
     i->op1 = rhs->inst->lhs;
 
-    return i;
+    Append(rhs->inst, i);
+
+    return rhs->inst;
 }
 
 instNode *Parser::parse_output_stmt()
@@ -225,13 +228,16 @@ TreeNode *Parser::parse_variable_access()
 TreeNode *Parser::parse_expr()
 {
 
-    instNode *i = NULL;
+    instNode *head = NULL;
     while (1)
     {
         if (stack.terminal_peek().term.lexeme == "$" && next_symbol() == "$")
         {
             StackNode s = stack.pop();
-            s.expr->inst = i;
+            if(head != NULL){
+                s.expr->inst = head;
+            }
+
             return s.expr;
         }
         else
@@ -277,16 +283,9 @@ TreeNode *Parser::parse_expr()
                     StackNode E = reduce(reduce_me, RHS);
                     stack.push(E);
 
-                    if (i == NULL)
+                    if ((E.expr->inst->oper == OP_PLUS || E.expr->inst->oper == OP_MULT || E.expr->inst->oper == OP_DIV || E.expr->inst->oper == OP_MINUS) && E.expr->wrapped == false)
                     {
-                        i = E.expr->inst;
-                    }
-                    else
-                    {
-                        if ((E.expr->inst->oper == OP_PLUS || E.expr->inst->oper == OP_MULT || E.expr->inst->oper == OP_DIV || E.expr->inst->oper == OP_MINUS) && E.expr->wrapped == false)
-                        {
-                            Append(i, E.expr->inst);
-                        }
+                        Append(head, E.expr->inst);
                     }
                 }
                 else
