@@ -12,20 +12,24 @@ int Parser::loc(const string lex)
     return -1;
 }
 
-void Append(instNode *head, instNode *newNode)
+instNode *Append(instNode *head, instNode *newNode)
 {
     if (head == NULL)
     {
+        // cout << "here";
         head = newNode;
-        return;
     }
-    instNode *node = head;
-    while (node->next)
+    else
     {
-        node = node->next;
-    }
+        instNode *node = head;
+        while (node->next)
+        {
+            node = node->next;
+        }
 
-    node->next = newNode;
+        node->next = newNode;
+    }
+    return head;
 }
 
 Token Parser::expect(TokenType expected_type)
@@ -183,14 +187,25 @@ instNode *Parser::parse_assign_stmt()
     trees.push_back(Tree(new TreeNode(rhs, lhs, "="), expect(SEMICOLON).line_no));
     checker.type_check_assignment_stmt(rhs, lhs, ln);
 
+    instNode *node = rhs->inst;
+    while (node->next != nullptr)
+    {
+        node = node->next;
+    }
+
+
     instNode *i = new instNode();
     i->lhsat = lhs->inst->lhsat;
     i->lhs = lhs->inst->lhs;
     i->iType = ASSIGN_INST;
-    i->op1at = rhs->inst->lhsat;
-    i->op1 = rhs->inst->lhs;
+    i->op1at = node->lhsat;
+    i->op1 = node->lhs;
+    i->oper = OP_NOOP;
 
-    Append(rhs->inst, i);
+    if (rhs->inst->op1 != -1)
+    {
+        Append(rhs->inst, i);
+    }
 
     return rhs->inst;
 }
@@ -234,7 +249,15 @@ TreeNode *Parser::parse_expr()
         if (stack.terminal_peek().term.lexeme == "$" && next_symbol() == "$")
         {
             StackNode s = stack.pop();
-            if(head != NULL){
+            if (head != NULL)
+            {
+
+                instNode *node = head;
+                while (node->next != nullptr)
+                {
+                    node = node->next;
+                }
+
                 s.expr->inst = head;
             }
 
@@ -285,7 +308,31 @@ TreeNode *Parser::parse_expr()
 
                     if ((E.expr->inst->oper == OP_PLUS || E.expr->inst->oper == OP_MULT || E.expr->inst->oper == OP_DIV || E.expr->inst->oper == OP_MINUS) && E.expr->wrapped == false)
                     {
-                        Append(head, E.expr->inst);
+
+                        cout << "_________\n";
+                        cout << E.expr->inst->lhs << endl;
+                        cout << E.expr->inst->op1 << endl;
+
+                        cout << "_________\n";
+                        head = Append(head, E.expr->inst);
+
+                        if (head == NULL)
+                        {
+                            cout << "null\n";
+                        }
+
+                        cout << "CURRENT LIST:\n";
+                        cout << "+++++++\n";
+                        // cout << head->lhs << " " << head->op1 << endl;
+                        instNode *n = head;
+                        while (n)
+                        {
+                            cout << n->lhs << endl;
+                            cout << n->op1 << endl;
+                            cout << endl;
+                            n = n->next;
+                        }
+                        cout << "+++++++\n";
                     }
                 }
                 else
