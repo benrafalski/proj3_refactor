@@ -69,7 +69,7 @@ void Parser::parse_program(const int task)
         checker.print_type_errors();
         break;
     case 3:
-        cout << "3\n";
+        cout << "\n";
     }
 }
 
@@ -152,6 +152,19 @@ instNode *Parser::parse_stmt_list()
     if (peek(1) == ID || peek(1) == OUTPUT)
     {
         Append(i, parse_stmt_list());
+
+        cout << "VA LIST:\n";
+        cout << "oooooooo\n";
+        // cout << head->lhs << " " << head->op1 << endl;
+        instNode *n = i;
+        while (n)
+        {
+            cout << n->lhs << endl;
+            cout << n->op1 << endl;
+            cout << endl;
+            n = n->next;
+        }
+        cout << "oooooooo\n";
         return i;
     }
     else if (peek(1) == RBRACE)
@@ -193,21 +206,40 @@ instNode *Parser::parse_assign_stmt()
         node = node->next;
     }
 
+    instNode *node2 = lhs->inst;
+    while (node2->next != nullptr)
+    {
+        node2 = node2->next;
+    }
 
     instNode *i = new instNode();
-    i->lhsat = lhs->inst->lhsat;
-    i->lhs = lhs->inst->lhs;
+    i->lhsat = node2->lhsat;
+    i->lhs = node2->lhs;
     i->iType = ASSIGN_INST;
     i->op1at = node->lhsat;
     i->op1 = node->lhs;
     i->oper = OP_NOOP;
 
-    if (rhs->inst->op1 != -1)
+    instNode *rt_me = i;
+
+    if (lhs->inst->op1 != -1 && rhs->inst->op1 != -1)
+    {
+        Append(lhs->inst, rhs->inst);
+        Append(lhs->inst, i);
+        rt_me = lhs->inst;
+    }
+    else if (rhs->inst->op1 == -1 && lhs->inst->op1 != -1)
+    {
+        Append(lhs->inst, i);
+        rt_me = lhs->inst;
+    }
+    else if (rhs->inst->op1 != -1 && lhs->inst->op1 == -1)
     {
         Append(rhs->inst, i);
+        rt_me = rhs->inst;
     }
 
-    return rhs->inst;
+    return rt_me;
 }
 
 instNode *Parser::parse_output_stmt()
@@ -217,12 +249,40 @@ instNode *Parser::parse_output_stmt()
     checker.type_check_output_stmt(va, ln);
     expect(SEMICOLON);
 
+    instNode *node = va->inst;
+    while (node->next != nullptr)
+    {
+        node = node->next;
+    }
+
     instNode *i = new instNode();
     i->iType = OUTPUT_INST;
-    i->op1at = va->inst->lhsat;
-    i->op1 = va->inst->lhs;
+    i->op1at = node->lhsat;
+    i->op1 = node->lhs;
 
-    return i;
+    if (va->inst->op1 != -1)
+    {
+        va->inst = Append(va->inst, i);
+
+        // cout << "VA LIST:\n";
+        // cout << "oooooooo\n";
+        // // cout << head->lhs << " " << head->op1 << endl;
+        // instNode *n = va->inst;
+        // while (n)
+        // {
+        //     cout << n->lhs << endl;
+        //     cout << n->op1 << endl;
+        //     cout << endl;
+        //     n = n->next;
+        // }
+        // cout << "oooooooo\n";
+
+        return va->inst;
+    }
+    else
+    {
+        return i;
+    }
 }
 
 TreeNode *Parser::parse_variable_access()

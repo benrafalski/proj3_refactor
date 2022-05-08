@@ -96,7 +96,7 @@ void Task3()
 
     i02->next = i03;
 
-    instNode *i1 = new instNode();//********
+    instNode *i1 = new instNode();
     i1->lhsat = DIRECT;
     i1->lhs = 34;            // t1
     i1->iType = ASSIGN_INST; // =
@@ -108,7 +108,7 @@ void Task3()
 
     i03->next = i1;
 
-    instNode *i2 = new instNode();//********
+    instNode *i2 = new instNode();//
     i2->lhsat = DIRECT;
     i2->lhs = 35;            // t2
     i2->iType = ASSIGN_INST; // =
@@ -120,7 +120,7 @@ void Task3()
 
     i1->next = i2;
 
-    instNode *i3 = new instNode();//********
+    instNode *i3 = new instNode();//
     i3->lhsat = DIRECT;
     i3->lhs = 36;            // t3
     i3->iType = ASSIGN_INST; // =
@@ -149,7 +149,7 @@ void Task3()
 
     i4->next = i5;
 
-    instNode *i6 = new instNode();//********
+    instNode *i6 = new instNode();//
     i6->lhsat = DIRECT;
     i6->lhs = 37;            // t4
     i6->iType = ASSIGN_INST; // =
@@ -161,7 +161,7 @@ void Task3()
 
     i5->next = i6;
 
-    instNode *i7 = new instNode();//********
+    instNode *i7 = new instNode();//
     i7->lhsat = DIRECT;
     i7->lhs = 38;            // t5
     i7->iType = ASSIGN_INST; // =
