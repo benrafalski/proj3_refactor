@@ -33,10 +33,14 @@ void Task3()
 
     // parser.Task3();
 
-    parser.parse_program(3);
+    // parser.parse_program(3);
 
+    // return;
+    instNode *code = parser.parse_program(3);
+
+    execute_inst_list(code);
     return;
-    instNode *code;
+    // instNode *code;
 
     // program
     // SCALAR a b c d
@@ -161,7 +165,7 @@ void Task3()
 
     i5->next = i6;
 
-    instNode *i7 = new instNode();//
+    instNode *i7 = new instNode();// lhsat is INDRECT
     i7->lhsat = DIRECT;
     i7->lhs = 38;            // t5
     i7->iType = ASSIGN_INST; // =
@@ -174,7 +178,7 @@ void Task3()
 
     i6->next = i7;
 
-    instNode *i8 = new instNode();
+    instNode *i8 = new instNode(); // i8->lhsat is DIRECT
     i8->lhsat = INDIRECT;
     i8->lhs = 38;            // x[a+b]
     i8->iType = ASSIGN_INST; // =
@@ -184,7 +188,7 @@ void Task3()
 
     i7->next = i8;
 
-    instNode *i9 = new instNode();//********
+    instNode *i9 = new instNode();//
     i9->lhsat = DIRECT;
     i9->lhs = 39;            // t6 will contain address of x[3]
     i9->iType = ASSIGN_INST; // =
@@ -197,7 +201,7 @@ void Task3()
 
     i8->next = i9;
 
-    instNode *i10 = new instNode();//********
+    instNode *i10 = new instNode();// i10->op1at is DIRECT
     i10->iType = OUTPUT_INST; // OUTPUT
     i10->op1at = INDIRECT;
     i10->op1 = 39; // x[3] by providing its

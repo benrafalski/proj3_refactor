@@ -68,6 +68,7 @@ private:
     };
 
     int next_index = 0;
+    int last_index = 0;
     vector<location> location_table;
 
     int loc(const string);
@@ -76,7 +77,7 @@ private:
     vector<string> parse_scalar_decl_section();
     vector<string> parse_array_decl_section();
     vector<string> parse_id_list();
-    void parse_block();
+    instNode * parse_block();
     instNode * parse_stmt_list();
     instNode * parse_stmt();
     instNode * parse_assign_stmt();
@@ -96,5 +97,5 @@ private:
     StackNode reduce(vector<StackNode> stk, vector<string> rhs);
 
 public:
-    void parse_program(const int);
+    instNode* parse_program(const int);
 };

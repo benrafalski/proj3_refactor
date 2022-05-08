@@ -1,5 +1,122 @@
 #include "parser.h"
 
+string nodeAt(AddrType type)
+{
+    string t = "NA";
+    switch (type)
+    {
+    case 0:
+    {
+        t = "IMMEDIATE";
+        break;
+    }
+    case 1:
+    {
+        t = "DIRECT";
+        break;
+    }
+    case 2:
+    {
+        t = "INDIRECT";
+        break;
+    }
+    case 3:
+    {
+        t = "NOAT";
+        break;
+    }
+    }
+
+    return t;
+}
+
+string nodeOp(OpType type)
+{
+    string t = "OP_NOOPT";
+    switch (type)
+    {
+    case 0:
+    {
+        t = "OP_NOOP";
+        break;
+    }
+    case 1:
+    {
+        t = "OP_PLUS";
+        break;
+    }
+    case 2:
+    {
+        t = "OP_MINUS";
+        break;
+    }
+    case 3:
+    {
+        t = "OP_MULT";
+        break;
+    }
+    case 4:
+    {
+        t = "OP_DIV";
+        break;
+    }
+    }
+
+    return t;
+}
+
+string nodeType(InstType type)
+{
+    string t = "NOIT";
+    switch (type)
+    {
+    case 0:
+    {
+        t = "OUTPUT_INST";
+        break;
+    }
+    case 1:
+    {
+        t = "ASSIGN_INST";
+        break;
+    }
+    case 2:
+    {
+        t = "CJMP_INST";
+        break;
+    }
+    }
+
+    return t;
+}
+
+void printInstNode(instNode *node)
+{
+    cout << "InstNode * = \n";
+    cout << "lhsat: " << nodeAt(node->lhsat) << "\n";
+    cout << "lhs: " << node->lhs << "\n";
+    cout << "type: " << nodeType(node->iType) << "\n";
+    cout << "op1at: " << nodeAt(node->op1at) << "\n";
+    cout << "op1: " << node->op1 << "\n";
+    cout << "oper: " << nodeOp(node->oper) << "\n";
+    cout << "op2at: " << nodeAt(node->op2at) << "\n";
+    cout << "op2: " << node->op2 << "\n";
+    cout << "\n";
+}
+
+void printList(instNode *list)
+{
+    if (list == nullptr)
+    {
+        return;
+    }
+    else
+    {
+        printInstNode(list);
+        printList(list->next);
+    }
+}
+
 int Parser::loc(const string lex)
 {
     for (const auto &l : location_table)
@@ -53,13 +170,12 @@ TokenType Parser::peek(const int far)
 }
 
 // not done
-void Parser::parse_program(const int task)
+instNode *Parser::parse_program(const int task)
 {
     stack.init_stack();
     parse_decl_section();
-    parse_block();
+    instNode *i = parse_block();
     expect(END_OF_FILE);
-
     switch (task)
     {
     case 1:
@@ -68,26 +184,27 @@ void Parser::parse_program(const int task)
     case 2:
         checker.print_type_errors();
         break;
-    case 3:
-        cout << "\n";
     }
+    return i;
 }
 
 // not done
-void Parser::parse_block()
+instNode *Parser::parse_block()
 {
     expect(LBRACE);
     instNode *i = parse_stmt_list();
     expect(RBRACE);
 
-    while (i->next)
-    {
-        cout << i->lhs << endl;
-        cout << i->op1 << endl;
-        cout << "\n\n";
+    // while (i->next)
+    // {
+    //     cout << i->lhs << endl;
+    //     cout << i->op1 << endl;
+    //     cout << "\n\n";
 
-        i = i->next;
-    }
+    //     i = i->next;
+    // }
+
+    return i;
 }
 
 // done
@@ -108,6 +225,8 @@ void Parser::parse_decl_section()
         location_table.push_back(location(next_index, a, ARR));
         next_index += 10;
     }
+
+    last_index = next_index;
 
     // cout << next_index << endl;
 }
@@ -153,18 +272,18 @@ instNode *Parser::parse_stmt_list()
     {
         Append(i, parse_stmt_list());
 
-        cout << "VA LIST:\n";
-        cout << "oooooooo\n";
-        // cout << head->lhs << " " << head->op1 << endl;
-        instNode *n = i;
-        while (n)
-        {
-            cout << n->lhs << endl;
-            cout << n->op1 << endl;
-            cout << endl;
-            n = n->next;
-        }
-        cout << "oooooooo\n";
+        // cout << "VA LIST:\n";
+        // cout << "oooooooo\n";
+        // // cout << head->lhs << " " << head->op1 << endl;
+        // instNode *n = i;
+        // while (n)
+        // {
+        //     cout << n->lhs << endl;
+        //     cout << n->op1 << endl;
+        //     cout << endl;
+        //     n = n->next;
+        // }
+        // cout << "oooooooo\n";
         return i;
     }
     else if (peek(1) == RBRACE)
@@ -178,7 +297,7 @@ instNode *Parser::parse_stmt_list()
 // not done
 instNode *Parser::parse_stmt()
 {
-    cout << "smtt\n";
+    // cout << "smtt\n";
     instNode *i;
     // cout << "stmt\n";
     if (peek(1) == ID)
@@ -213,7 +332,7 @@ instNode *Parser::parse_assign_stmt()
     }
 
     instNode *i = new instNode();
-    i->lhsat = node2->lhsat;
+    i->lhsat = (node2->lhs > last_index) ? INDIRECT : DIRECT;
     i->lhs = node2->lhs;
     i->iType = ASSIGN_INST;
     i->op1at = node->lhsat;
@@ -257,26 +376,12 @@ instNode *Parser::parse_output_stmt()
 
     instNode *i = new instNode();
     i->iType = OUTPUT_INST;
-    i->op1at = node->lhsat;
+    i->op1at = (node->lhs > last_index) ? INDIRECT : DIRECT;
     i->op1 = node->lhs;
 
     if (va->inst->op1 != -1)
     {
         va->inst = Append(va->inst, i);
-
-        // cout << "VA LIST:\n";
-        // cout << "oooooooo\n";
-        // // cout << head->lhs << " " << head->op1 << endl;
-        // instNode *n = va->inst;
-        // while (n)
-        // {
-        //     cout << n->lhs << endl;
-        //     cout << n->op1 << endl;
-        //     cout << endl;
-        //     n = n->next;
-        // }
-        // cout << "oooooooo\n";
-
         return va->inst;
     }
     else
@@ -369,30 +474,30 @@ TreeNode *Parser::parse_expr()
                     if ((E.expr->inst->oper == OP_PLUS || E.expr->inst->oper == OP_MULT || E.expr->inst->oper == OP_DIV || E.expr->inst->oper == OP_MINUS) && E.expr->wrapped == false)
                     {
 
-                        cout << "_________\n";
-                        cout << E.expr->inst->lhs << endl;
-                        cout << E.expr->inst->op1 << endl;
+                        // cout << "_________\n";
+                        // cout << E.expr->inst->lhs << endl;
+                        // cout << E.expr->inst->op1 << endl;
 
-                        cout << "_________\n";
+                        // cout << "_________\n";
                         head = Append(head, E.expr->inst);
 
-                        if (head == NULL)
-                        {
-                            cout << "null\n";
-                        }
+                        // if (head == NULL)
+                        // {
+                        //     cout << "null\n";
+                        // }
 
-                        cout << "CURRENT LIST:\n";
-                        cout << "+++++++\n";
-                        // cout << head->lhs << " " << head->op1 << endl;
-                        instNode *n = head;
-                        while (n)
-                        {
-                            cout << n->lhs << endl;
-                            cout << n->op1 << endl;
-                            cout << endl;
-                            n = n->next;
-                        }
-                        cout << "+++++++\n";
+                        // cout << "CURRENT LIST:\n";
+                        // cout << "+++++++\n";
+                        // // cout << head->lhs << " " << head->op1 << endl;
+                        // instNode *n = head;
+                        // while (n)
+                        // {
+                        //     cout << n->lhs << endl;
+                        //     cout << n->op1 << endl;
+                        //     cout << endl;
+                        //     n = n->next;
+                        // }
+                        // cout << "+++++++\n";
                     }
                 }
                 else
