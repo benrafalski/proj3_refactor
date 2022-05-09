@@ -1,11 +1,15 @@
-SCALAR a b c d	 
-ARRAY x y z
+SCALAR x y z
+ARRAY a b c
 {
-a = 1;
-b = 2;
-c = 3;
-d = (a+b)*(b+c);
-OUTPUT d;
-x[a+b] = d;
-OUTPUT x[3];
+x = 1;
+y = 2;
+z = 3;
+a[x] = z;
+a[y] = z+1;
+b[.] = a[.];
+c[.] = a[.]+1[.];
+x = a[.]*b[.] - b[.]*c[.];
+OUTPUT x;
+OUTPUT y;
+OUTPUT z;
 }

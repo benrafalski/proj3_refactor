@@ -679,7 +679,7 @@ StackNode Parser::reduce(vector<StackNode> stk, vector<string> rhs)
         inst->lhs = next_index++;
         inst->iType = ASSIGN_INST;
         inst->op1at = IMMEDIATE;
-        inst->op1 = stk[0].expr->inst->lhs; // bug here
+        inst->op1 = stk[0].expr->inst->lhs;
         inst->oper = OP_PLUS;
         inst->op2at = stk[2].expr->inst->lhsat;
         inst->op2 = stk[2].expr->inst->lhs;
@@ -692,10 +692,11 @@ StackNode Parser::reduce(vector<StackNode> stk, vector<string> rhs)
         inst->lhs = next_index++;
         inst->iType = ASSIGN_INST;
         inst->op1at = IMMEDIATE;
-        inst->op1 = stk[0].expr->inst->lhs; // bug here
-        inst->oper = OP_PLUS;
-        inst->op2at = stk[2].expr->inst->lhsat;
-        inst->op2 = stk[2].expr->inst->lhs;
+        inst->op1 = stk[0].expr->inst->lhs;
+        inst->oper = OP_NOOP;
+
+
+        
     }
     else
     { // primary
