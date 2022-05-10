@@ -1,5 +1,149 @@
 #include "parser.h"
 
+
+instNode *Append(instNode *head, instNode *newNode)
+{
+    if (head == NULL)
+    {
+        // cout << "here";
+        head = newNode;
+    }
+    else
+    {
+        instNode *node = head;
+        while (node->next)
+        {
+            node = node->next;
+        }
+
+        node->next = newNode;
+    }
+    return head;
+}
+
+
+TreeNode *Parser::makeInst(TreeNode *node)
+{
+    TreeNode *rt_me = new TreeNode();
+    instNode *inst = new instNode();
+
+    if (node->left == NULL && node->right == NULL)
+    {
+        if (node->type == _SCALAR || node->type == _ARRAY)
+        {
+            inst->lhs = loc(node->rawValue);
+            inst->lhsat = DIRECT;
+            rt_me->inst = inst;
+            return rt_me;
+        }
+        else if (node->is_num)
+        {
+            inst->lhs = stoi(node->rawValue);
+            inst->lhsat = IMMEDIATE;
+            rt_me->inst = inst;
+            return rt_me;
+        }
+    }
+    else
+    {
+        TreeNode *right = makeInst(node->right);
+        TreeNode *left = makeInst(node->left);
+        if ((right->type == _SCALAR && left->type == _SCALAR) && (node->op == _PLUS || node->op == _MINUS || node->op == _MULT || node->op == _DIV))
+        {
+            inst->lhsat = DIRECT;
+            inst->lhs = next_index++;
+            inst->iType = ASSIGN_INST;
+            inst->op1at = left->inst->lhsat;
+            inst->op1 = left->inst->lhs;
+            inst->op2at = right->inst->lhsat;
+            inst->op2 = right->inst->lhs;
+            switch (node->op)
+            {
+            case _PLUS:
+                inst->oper = OP_PLUS;
+                break;
+            case _MINUS:
+                inst->oper = OP_MINUS;
+                break;
+            case _MULT:
+                inst->oper = OP_MULT;
+                break;
+            case _DIV:
+                inst->oper = OP_DIV;
+                break;
+            default:
+                cout << "invalid operation type !!!!\n";
+                break;
+            }
+            rt_me->inst = inst;
+            return rt_me;
+        }else if(left->type == _ARRAY && right->type == _SCALAR && (node->op == _EXPR)){
+            // add undefined part
+            inst->lhsat = DIRECT;
+            inst->lhs = next_index++;
+            inst->iType = ASSIGN_INST;
+            inst->op1at = IMMEDIATE;
+            inst->op1 = left->inst->lhs;
+            inst->oper = OP_PLUS;
+            inst->op2at = right->inst->lhsat;
+            inst->op2 = right->inst->lhs;
+            rt_me->inst = inst;
+            return rt_me;
+        }else if((right->op == _DOT && left->op == _DOT) && (left->type == _ARRAY && right->type == _ARRAY) && (node->op == _PLUS || node->op == _MINUS || node->op == _MULT)){
+            instNode * head = new instNode(), *prev = new instNode();
+            switch (node->op)
+            {
+            case _PLUS:
+                inst->oper = OP_PLUS;
+
+                
+
+                for(int i = 0; i < 10; i++){
+                    if(i == 0){
+                        head->lhsat = DIRECT;
+                        head->lhs = next_index++; // c[i]
+                        head->iType = ASSIGN_INST;
+                        head->op1at = IMMEDIATE;
+                        head->op1 = left->inst->lhs;
+                        head->oper = OP_PLUS;
+                        head->op2at = IMMEDIATE;
+                        head->op2 = i;
+                    }else{
+                        prev->lhsat = DIRECT;
+                        prev->lhs = next_index++; // c[i]
+                        prev->iType = ASSIGN_INST;
+                        prev->op1at = IMMEDIATE;
+                        prev->op1 = left->inst->lhs;
+                        prev->oper = OP_PLUS;
+                        prev->op2at = IMMEDIATE;
+                        prev->op2 = i;
+                        head = Append(head, prev);
+                    }
+                    inst = head;
+
+
+                }
+
+                break;
+            case _MINUS:
+                inst->oper = OP_MINUS;
+                break;
+            case _MULT:
+                inst->oper = OP_MULT;
+                break;
+            default:
+                cout << "invalid operation type !!!?!\n";
+                break;
+            }
+
+            rt_me->inst = inst;
+            return rt_me;
+
+
+        }
+    }
+}
+
 string nodeAt(AddrType type)
 {
     string t = "NA";
@@ -129,25 +273,7 @@ int Parser::loc(const string lex)
     return -1;
 }
 
-instNode *Append(instNode *head, instNode *newNode)
-{
-    if (head == NULL)
-    {
-        // cout << "here";
-        head = newNode;
-    }
-    else
-    {
-        instNode *node = head;
-        while (node->next)
-        {
-            node = node->next;
-        }
 
-        node->next = newNode;
-    }
-    return head;
-}
 
 Token Parser::expect(TokenType expected_type)
 {
@@ -159,7 +285,7 @@ Token Parser::expect(TokenType expected_type)
 
 void Parser::syntax_error()
 {
-    // ++*(int *)0;
+    ++*(int *)0;
     cout << "SNYATX EORRR !!!\n";
     exit(1);
 }
@@ -339,6 +465,12 @@ instNode *Parser::parse_assign_stmt()
     i->op1 = node->lhs;
     i->oper = OP_NOOP;
 
+    instNode * l = makeInst(lhs)->inst;
+    instNode * r = makeInst(rhs)->inst;
+
+    printList(l);
+    printList(r);
+
     instNode *rt_me = i;
 
     if (lhs->inst->op1 != -1 && rhs->inst->op1 != -1)
@@ -501,10 +633,16 @@ TreeNode *Parser::parse_expr()
                     }
                 }
                 else
+                {
+                    cout << t.line_no << endl;
                     syntax_error();
+                }
             }
             else
+            {
+                cout << t.line_no << endl;
                 syntax_error();
+            }
         }
     }
 }
@@ -694,9 +832,6 @@ StackNode Parser::reduce(vector<StackNode> stk, vector<string> rhs)
         inst->op1at = IMMEDIATE;
         inst->op1 = stk[0].expr->inst->lhs;
         inst->oper = OP_NOOP;
-
-
-        
     }
     else
     { // primary

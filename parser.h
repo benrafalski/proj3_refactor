@@ -72,6 +72,7 @@ private:
     vector<location> location_table;
 
     int loc(const string);
+    TreeNode * makeInst(TreeNode * node);
 
     void parse_decl_section();
     vector<string> parse_scalar_decl_section();
